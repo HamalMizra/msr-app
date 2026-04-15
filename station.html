@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
   <head>
+    <script src="./stations-config.js?v=20260415"></script>
     <script src="./auth.js"></script>
-    <script>window.HAMALAuth && window.HAMALAuth.requireLogin();</script>
+    <script>window.HAMALAuth && window.HAMALAuth.requireStationPageAccess();</script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>תחנה — מרכז סיוע ראשוני</title>
@@ -133,8 +134,7 @@
       </div>
     </div>
 
-    <script src="./stations-config.js?v=20260405p"></script>
-    <script src="./station-app.js?v=20260405p"></script>
+    <script src="./station-app.js?v=20260415"></script>
   
     <script>window.HAMALAuth && window.HAMALAuth.injectLogoutButton();</script>
 </body>

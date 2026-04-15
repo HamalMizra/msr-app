@@ -44,6 +44,8 @@ Then open:
 3. Add these environment variables in Netlify:
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY`
+   - `HAMAL_SECRET` — main password for טופס מלא, דשבורד, ורשימת «כל התחנות»
+   - `HAMAL_STATION_KEYS` (optional) — JSON map of station slugs to passwords for volunteer-only access, e.g. `{"lev":"pass1","medical":"pass2"}`. Slugs are defined in `stations-config.js` (`registration`, `lev`, `medical`, `area`, `property`, `housing`, `transport`, `vet`). Volunteers open `login-station.html?st=lev` (or use the links under «כל התחנות») and do not need `HAMAL_SECRET`.
 4. Deploy.
 
 ## 6. First production test

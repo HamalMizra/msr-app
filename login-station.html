@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>כניסה לתחנה</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: #f6f8fa;
+        margin: 0;
+        font-family: "Rubik", "Segoe UI", system-ui, sans-serif;
+      }
+      .login-box {
+        background: #fff;
+        padding: 28px;
+        border-radius: 12px;
+        box-shadow: 0 1px 8px rgba(22, 48, 65, 0.12);
+        width: min(92vw, 380px);
+        text-align: center;
+        border: 1px solid #d0d7de;
+      }
+      .login-box h1 {
+        margin: 0 0 10px;
+        color: #163041;
+        font-size: 1.35rem;
+      }
+      .login-box p {
+        margin: 0 0 16px;
+        color: #57606a;
+        font-size: 0.95rem;
+      }
+      .login-box input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #d0d7de;
+        border-radius: 8px;
+        font-size: 1rem;
+        box-sizing: border-box;
+      }
+      .login-box button {
+        margin-top: 14px;
+        width: 100%;
+        padding: 12px;
+        border: 0;
+        border-radius: 8px;
+        background: #163041;
+        color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      .login-box button:hover {
+        background: #1f4258;
+      }
+      .error {
+        color: #b42318;
+        min-height: 1.2em;
+        margin-top: 12px;
+      }
+      .station-pick {
+        text-align: right;
+        margin: 0 0 12px;
+        font-size: 0.9rem;
+        color: #57606a;
+      }
+      .station-pick a {
+        color: #163041;
+        display: block;
+        margin: 6px 0;
+      }
+    </style>
+    <script src="./stations-config.js"></script>
+    <script src="./auth.js"></script>
+  </head>
+
+  <body>
+    <div class="login-box">
+      <h1 id="pageTitle">כניסה לתחנה</h1>
+      <p id="pageHint">יש להזין את סיסמת הגישה לתחנה שנבחרה.</p>
+
+      <div id="stationPicker" class="station-pick hidden"></div>
+
+      <input type="password" id="password" placeholder="סיסמת תחנה" autofocus />
+      <button id="loginBtn" type="button">כניסה</button>
+
+      <div class="error" id="error"></div>
+    </div>
+
+    <script>
+      (function () {
+        function safeNextUrl(next) {
+          if (!next || typeof next !== "string") return "";
+          var t = next.trim();
+          if (!t) return "";
+          if (/^https?:\/\//i.test(t)) return "";
+          try {
+            var u = new URL(t, window.location.origin);
+            if (u.origin !== window.location.origin) return "";
+            return u.pathname + (u.search || "");
+          } catch (e) {
+            return "";
+          }
+        }
+
+        function getQuerySt() {
+          try {
+            var p = new URLSearchParams(window.location.search || "");
+            return (p.get("st") || "").trim();
+          } catch (e) {
+            return "";
+          }
+        }
+
+        function getQueryNext() {
+          try {
+            var p = new URLSearchParams(window.location.search || "");
+            return p.get("next") || "";
+          } catch (e2) {
+            return "";
+          }
+        }
+
+        var slug = getQuerySt();
+        var stationName =
+          typeof window.msrGetStationNameFromSlug === "function"
+            ? window.msrGetStationNameFromSlug(slug)
+            : "";
+
+        var titleEl = document.getElementById("pageTitle");
+        var hintEl = document.getElementById("pageHint");
+        var pickerEl = document.getElementById("stationPicker");
+
+        if (slug && stationName && titleEl) {
+          titleEl.textContent = "כניסה — " + stationName;
+        }
+        if (slug && !stationName) {
+          if (hintEl)
+            hintEl.innerHTML =
+              'מזהה תחנה לא מוכר. <a href="./stations.html">חזרה לרשימת תחנות</a>';
+        }
+
+        if (!slug && window.MSR_STATION_SLUG_BY_NAME && pickerEl) {
+          pickerEl.classList.remove("hidden");
+          var map = window.MSR_STATION_SLUG_BY_NAME;
+          var label = document.createElement("span");
+          label.textContent = "בחרו תחנה:";
+          pickerEl.appendChild(label);
+          Object.keys(map).forEach(function (name) {
+            var a = document.createElement("a");
+            a.href =
+              "./login-station.html?st=" + encodeURIComponent(map[name]);
+            a.textContent = name;
+            pickerEl.appendChild(a);
+          });
+          if (hintEl) hintEl.textContent = "נא לבחור תחנה מהרשימה, ואז להזין סיסמה.";
+          var inp = document.getElementById("password");
+          if (inp) inp.disabled = true;
+          var btn = document.getElementById("loginBtn");
+          if (btn) btn.disabled = true;
+          return;
+        }
+
+        if (window.HAMALAuth && window.HAMALAuth.getStoredKey()) {
+          var n = safeNextUrl(getQueryNext());
+          if (n) {
+            window.location.replace(n);
+            return;
+          }
+          if (slug && stationName) {
+            window.location.replace(
+              "./station.html?s=" + encodeURIComponent(stationName)
+            );
+            return;
+          }
+          window.location.replace("./index.html");
+          return;
+        }
+
+        if (
+          slug &&
+          stationName &&
+          window.HAMALAuth &&
+          window.HAMALAuth.getStationKey(slug)
+        ) {
+          var next2 = safeNextUrl(getQueryNext());
+          var def =
+            "./station.html?s=" + encodeURIComponent(stationName);
+          window.location.replace(next2 || def);
+          return;
+        }
+
+        function doLogin() {
+          var pass = document.getElementById("password").value.trim();
+          var errorEl = document.getElementById("error");
+
+          if (!slug || !stationName) {
+            if (errorEl) errorEl.innerText = "חסר מזהה תחנה בכתובת";
+            return;
+          }
+
+          if (!pass) {
+            if (errorEl) errorEl.innerText = "יש להזין סיסמה";
+            return;
+          }
+
+          if (/^https?:\/\//i.test(pass) || pass.indexOf("/api/items") >= 0) {
+            if (errorEl) errorEl.innerText = "הוזן ערך לא תקין כסיסמה";
+            return;
+          }
+
+          try {
+            window.HAMALAuth.setStationKey(slug, pass);
+          } catch (e) {
+            if (errorEl) errorEl.innerText = "שגיאה בשמירת הסיסמה";
+            return;
+          }
+
+          try {
+            sessionStorage.setItem("MSR_ACTIVE_STATION_SLUG", slug);
+          } catch (e2) {}
+
+          var next3 = safeNextUrl(getQueryNext());
+          var def2 =
+            "./station.html?s=" + encodeURIComponent(stationName);
+          window.location.replace(next3 || def2);
+        }
+
+        document.getElementById("loginBtn").addEventListener("click", doLogin);
+        document
+          .getElementById("password")
+          .addEventListener("keydown", function (e) {
+            if (e.key === "Enter") doLogin();
+          });
+      })();
+    </script>
+  </body>
+</html>

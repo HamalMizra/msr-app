@@ -28,12 +28,44 @@
         <h2>תחנות המסלול</h2>
         <p id="stationsHubLoadHint" class="status" aria-live="polite"></p>
         <div id="stationsHubGrid" class="stations-hub-grid"></div>
+        <details class="station-volunteer-links" style="margin-top: 1.25rem">
+          <summary style="cursor: pointer; font-weight: 600; color: #163041">
+            קישורי כניסה למתנדבים (סיסמה נפרדת לכל תחנה)
+          </summary>
+          <p class="muted" style="margin: 10px 0 8px">
+            ניתן לשלוח לכל תחנה קישור ייעודי; המתנדב יזין את סיסמת התחנה בלבד (בלי סיסמת החמ״ל הראשית).
+          </p>
+          <ul id="stationLoginLinkList" style="margin: 0; padding-right: 1.25rem; line-height: 1.7"></ul>
+        </details>
       </section>
     </div>
 
-    <script src="./stations-config.js?v=20260405p"></script>
-    <script src="./stations-hub.js?v=20260405p"></script>
-  
+    <script src="./stations-config.js?v=20260415"></script>
+    <script src="./stations-hub.js?v=20260415"></script>
+    <script>
+      (function () {
+        var ul = document.getElementById("stationLoginLinkList");
+        if (!ul || !window.MSR_STATION_SLUG_BY_NAME) return;
+        var base = window.location.origin + window.location.pathname.replace(/[^/]+$/, "");
+        Object.keys(window.MSR_STATION_SLUG_BY_NAME).forEach(function (name) {
+          var slug = window.MSR_STATION_SLUG_BY_NAME[name];
+          var href = base + "login-station.html?st=" + encodeURIComponent(slug);
+          var li = document.createElement("li");
+          var a = document.createElement("a");
+          a.href = href;
+          a.textContent = name;
+          a.rel = "noopener";
+          li.appendChild(a);
+          li.appendChild(document.createTextNode(" — "));
+          var code = document.createElement("code");
+          code.style.fontSize = "0.85em";
+          code.style.wordBreak = "break-all";
+          code.textContent = href;
+          li.appendChild(code);
+          ul.appendChild(li);
+        });
+      })();
+    </script>
     <script>window.HAMALAuth && window.HAMALAuth.injectLogoutButton();</script>
 </body>
 </html>

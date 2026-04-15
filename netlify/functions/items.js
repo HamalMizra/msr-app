@@ -27,16 +27,45 @@ function getSupabase() {
   });
 }
 
+function getStationKeysFromEnv() {
+  const raw = process.env.HAMAL_STATION_KEYS;
+  if (!raw || typeof raw !== "string") return {};
+  try {
+    const j = JSON.parse(raw);
+    return typeof j === "object" && j !== null && !Array.isArray(j) ? j : {};
+  } catch {
+    return {};
+  }
+}
+
 function isAuthorized(event) {
   const secret = process.env.HAMAL_SECRET;
-  if (!secret) return false;
   const headers = event.headers || {};
   const headerKey =
     headers["x-hamal-key"] ||
     headers["X-Hamal-Key"] ||
     headers["x-hamal-secret"] ||
     headers["X-Hamal-Secret"];
-  return headerKey === secret;
+
+  if (secret && headerKey === secret) return true;
+
+  const stationKeys = getStationKeysFromEnv();
+  const stationSlug =
+    headers["x-hamal-station"] || headers["X-Hamal-Station"] || "";
+  const stationKey =
+    headers["x-hamal-station-key"] ||
+    headers["X-Hamal-Station-Key"] ||
+    "";
+  if (
+    stationSlug &&
+    stationKey &&
+    Object.prototype.hasOwnProperty.call(stationKeys, stationSlug) &&
+    stationKeys[stationSlug] === stationKey
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 function normalizeJsonString(value, fallback) {

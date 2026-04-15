@@ -29,6 +29,20 @@
 
     const REGISTRATION_STATION = STATIONS[0];
 
+    /**
+     * מזהי URL (ASCII) לכניסת מתנדבים לפי תחנה — תואמים ל־HAMAL_STATION_KEYS בשרת.
+     */
+    const STATION_SLUG_BY_NAME = {
+        "עמדת רישום ושחרור": "registration",
+        "צוות לב ורווחה": "lev",
+        "תחנה רפואה": "medical",
+        "איזור שהיה": "area",
+        "מס רכוש": "property",
+        "דיור": "housing",
+        "שינוע": "transport",
+        "וטרינר": "vet",
+    };
+
     /** לרשת Hub ולשדות הערות כלליים (ללא לב ורפואה) */
     const STATIONS_OTHER = STATIONS.filter(function (s) {
         return s !== LEV_STATION && s !== MEDICAL_STATION;
@@ -342,6 +356,26 @@
     global.msrStringifyArrivalReasonsArr = stringifyArrivalReasonsArr;
     global.msrFormatArrivalReasonsDisplay = formatArrivalReasonsDisplay;
     global.msrNormalizeStationLabel = normalizeStationLabel;
+    global.MSR_STATION_SLUG_BY_NAME = STATION_SLUG_BY_NAME;
+
+    function getStationSlug(name) {
+        const n = normalizeStationLabel(name);
+        return STATION_SLUG_BY_NAME[n] || "";
+    }
+
+    function getStationNameFromSlug(slug) {
+        const s = String(slug || "").trim();
+        if (!s) return "";
+        const keys = Object.keys(STATION_SLUG_BY_NAME);
+        for (let i = 0; i < keys.length; i++) {
+            const k = keys[i];
+            if (STATION_SLUG_BY_NAME[k] === s) return k;
+        }
+        return "";
+    }
+
+    global.msrGetStationSlug = getStationSlug;
+    global.msrGetStationNameFromSlug = getStationNameFromSlug;
 
     function parseStationPhases(s) {
         if (!s) return {};
