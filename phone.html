@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <script src="./auth.js"></script>
+    <script>window.HAMALAuth && window.HAMALAuth.requireLogin();</script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>רישום קצר — מרכז סיוע ראשוני</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap"
+          rel="stylesheet" />
+
+    <link rel="stylesheet" href="./styles.css" />
+
+    <style>
+        /* ביטול ניווט לחלוטין */
+        .site-nav {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="phone-page">
+
+        <header class="header">
+            <img src="./logo-mizra.png" width="120" height="48" alt="" />
+            <div class="header-text">
+                <h1>רישום קצר</h1>
+                <p>חיפוש לפי טלפון, שם או ת״ז — שמירה מהירה בלבד</p>
+            </div>
+        </header>
+
+        <!-- שאר הקובץ נשאר בדיוק כמו שהיה -->
+
+        <form id="phoneSearchForm" class="card phone-search-panel" novalidate>
+            <h2>חיפוש</h2>
+            <div class="phone-search-mode" role="radiogroup" aria-label="אופן חיפוש">
+                <label class="opt"><input type="radio" name="phoneSearchMode" value="phone" checked /> לפי טלפון</label>
+                <label class="opt"><input type="radio" name="phoneSearchMode" value="name" /> לפי שם</label>
+                <label class="opt"><input type="radio" name="phoneSearchMode" value="id" /> לפי ת״ז</label>
+            </div>
+            <div class="row">
+                <div class="field full">
+                    <label for="phoneSearchQuery">טקסט לחיפוש</label>
+                    <input type="search" id="phoneSearchQuery" autocomplete="off" placeholder="טלפון / שם / חלק מת״ז" enterkeyhint="search" />
+                </div>
+            </div>
+            <div class="btns" style="margin-top: 0">
+                <button type="submit" class="secondary" id="btnPhoneSearch">חיפוש</button>
+            </div>
+            <p id="phoneSearchStatus" class="status phone-search-status" aria-live="polite"></p>
+            <ul id="phoneSearchResults" class="phone-results hidden" role="listbox" aria-label="תוצאות"></ul>
+        </form>
+
+        <form class="card" id="quickPhoneForm" novalidate>
+            <h2>פרטים וסיבת הגעה</h2>
+            <p class="muted">טלפון חובה. אם נבחרה רשומה מהחיפוש — השמירה תעדכן אותה (לפי ת״ז או טלפון).</p>
+            <div class="row">
+                <div class="field full">
+                    <label for="quickPhone">טלפון <span aria-hidden="true">*</span></label>
+                    <input type="tel" id="quickPhone" required inputmode="tel" autocomplete="tel" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="field">
+                    <label for="quickFirst">שם פרטי</label>
+                    <input type="text" id="quickFirst" autocomplete="given-name" />
+                </div>
+                <div class="field">
+                    <label for="quickFamily">שם משפחה</label>
+                    <input type="text" id="quickFamily" autocomplete="family-name" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="field full">
+                    <label for="quickId">תעודת זהות</label>
+                    <input type="text" id="quickId" inputmode="numeric" autocomplete="off" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="field full">
+                    <label for="quickArrivalReason">סיבת הגעה <span aria-hidden="true">*</span></label>
+                    <select id="quickArrivalReason" required>
+                        <option value="">— בחרו —</option>
+                        <option value="רפואי">רפואי</option>
+                        <option value="חרדה">חרדה</option>
+                        <option value="מגורים">מגורים</option>
+                        <option value="איתור בני משפחה">איתור בני משפחה</option>
+                        <option value="אחר">אחר</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row" id="quickOtherWrap">
+                <div class="field full">
+                    <label for="quickArrivalOther">פירוט (אם נבחר &quot;אחר&quot;)</label>
+                    <textarea id="quickArrivalOther" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="btns">
+                <button type="submit" class="primary">שמירה</button>
+            </div>
+            <p id="quickStatus" class="status" aria-live="polite"></p>
+        </form>
+
+        <div id="phoneSuccess" class="banner-success hidden" role="status">נרשמת בהצלחה — הרשומה נשמרה במערכת</div>
+    </div>
+
+    <script src="./id-validation.js"></script>
+    <script src="./stations-config.js"></script>
+    <script>
+        (function () {
+            "use strict";
+
+            const API_BASE = "/api";
+            const fetchWithAuth = (window.HAMALAuth && window.HAMALAuth.fetchWithAuth) || fetch;
+
+            function $(id) {
+                return document.getElementById(id);
+            }
+
+            function digits(s) {
+                return String(s || "").replace(/\D/g, "");
+            }
+
+            function idDigitsOnly(s) {
+                let t = String(s || "").trim();
+                if (t.endsWith(".0") && /^\d+\.0$/.test(t)) t = t.slice(0, -2);
+                return t.replace(/\D/g, "");
+            }
+
+            function normId(s) {
+                const d = idDigitsOnly(s);
+                if (!d) return "";
+                if (d.length > 9) return d;
+                return d.padStart(9, "0");
+            }
+
+            function genRecordId() {
+                if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+                return "r-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9);
+            }
+
+            function ensureShape(r) {
+                if (typeof msrMigrateMedicalStationRename === "function") msrMigrateMedicalStationRename(r);
+                if (!r.recordId) r.recordId = genRecordId();
+                if (r.releaseNotes == null) r.releaseNotes = "";
+                var first =
+                    window.MSR_STATIONS && MSR_STATIONS.length
+                        ? MSR_STATIONS[0]
+                        : "עמדת רישום ושחרור";
+                var rel = r.released === true || r.released === "כן";
+                if (rel) {
+                    r.currentStation = "";
+                } else if (r.currentStation == null || r.currentStation === "") {
+                    r.currentStation = first;
+                }
+                if (r.nextStation == null) r.nextStation = "";
+                if (r.nextStations == null) r.nextStations = "";
+                if (r.arrivalReasons == null) r.arrivalReasons = "";
+                if (r.recordStatus == null || r.recordStatus === "") r.recordStatus = "פתוח";
+                if (r.stationNotes == null || r.stationNotes === "") r.stationNotes = "{}";
+                if (typeof msrMigrateLegacyMedicalNotes === "function") msrMigrateLegacyMedicalNotes(r);
+                if (typeof msrMigrateLegacyLevNotes === "function") msrMigrateLegacyLevNotes(r);
+                if (r.stationNotesMedical == null) r.stationNotesMedical = "";
+                if (r.stationNotesLev == null) r.stationNotesLev = "";
+                const nextList =
+                    typeof msrGetNextStationsListFromRecord === "function"
+                        ? msrGetNextStationsListFromRecord(r)
+                        : [];
+                if (!(String(r.nextStations || "").trim()) && nextList.length) {
+                    r.nextStations =
+                        typeof msrStringifyNextStationsArr === "function"
+                            ? msrStringifyNextStationsArr(nextList)
+                            : JSON.stringify(nextList);
+                } else if (!(String(r.nextStations || "").trim())) {
+                    r.nextStations = "[]";
+                }
+                if (!(String(r.nextStation || "").trim()) && nextList.length) {
+                    r.nextStation = nextList[0] || "";
+                }
+                const reasonsList =
+                    typeof msrParseArrivalReasonsStr === "function"
+                        ? msrParseArrivalReasonsStr(r.arrivalReasons, r.arrivalReason)
+                        : [];
+                if (!(String(r.arrivalReason || "").trim()) && reasonsList.length) {
+                    r.arrivalReason = reasonsList.join(", ");
+                }
+                if (
+                    (!(String(r.arrivalReasons || "").trim()) || r.arrivalReasons === "[]") &&
+                    (String(r.arrivalReason || "").trim())
+                ) {
+                    r.arrivalReasons =
+                        typeof msrStringifyArrivalReasonsArr === "function"
+                            ? msrStringifyArrivalReasonsArr([String(r.arrivalReason).trim()])
+                            : JSON.stringify([String(r.arrivalReason).trim()]);
+                } else if (!(String(r.arrivalReasons || "").trim())) {
+                    r.arrivalReasons =
+                        typeof msrStringifyArrivalReasonsArr === "function"
+                            ? msrStringifyArrivalReasonsArr([])
+                            : "[]";
+                }
+                if (r.stationPhases == null || r.stationPhases === "") r.stationPhases = "{}";
+                if (r.visitedStations == null || r.visitedStations === "") r.visitedStations = "[]";
+                return r;
+            }
+
+            async function loadRegs() {
+                const res = await fetchWithAuth(`${API_BASE}/items`);
+                if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(`Failed to load regs: ${res.status} ${txt}`);
+                }
+                const a = await res.json();
+                return Array.isArray(a) ? a.map(ensureShape) : [];
+            }
+
+            async function saveReg(rec) {
+                const res = await fetchWithAuth(`${API_BASE}/items`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(rec),
+                });
+
+                if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(`Failed to save: ${res.status} ${txt}`);
+                }
+            }
+
+            let phoneExplicitIdx = -1;
+
+            function getPhoneSearchMode() {
+                const r = document.querySelector('input[name="phoneSearchMode"]:checked');
+                return r ? r.value : "phone";
+            }
+
+            function tokenize(q) {
+                return String(q || "")
+                    .trim()
+                    .toLowerCase()
+                    .split(/\s+/)
+                    .filter(Boolean);
+            }
+
+            let population = [];
+            let populationPromise = null;
+
+            function loadPopulationOnce() {
+                if (!populationPromise) {
+                    populationPromise = fetch("./population.json", { cache: "no-store" })
+                        .then(function (res) {
+                            if (!res.ok) throw new Error("HTTP " + res.status);
+                            return res.json();
+                        })
+                        .then(function (data) {
+                            population = Array.isArray(data) ? data : [];
+                        })
+                        .catch(function () {
+                            population = [];
+                        });
+                }
+                return populationPromise;
+            }
+
+            function popPhoneDigits(p) {
+                return p.phoneDigits || digits(p.phone);
+            }
+
+            function popMatchesSavedReg(p, regList) {
+                const ph = popPhoneDigits(p);
+                const idP = idDigitsOnly(p.id);
+                return regList.some(function (r) {
+                    if (ph.length >= 7 && digits(r.phone) === ph) return true;
+                    if (idP.length >= 4 && normId(r.idNumber) === normId(idP)) return true;
+                    return false;
+                });
+            }
+
+            function popNameMatches(p, tokens) {
+                const fn = (p.first || "").toLowerCase();
+                const ln = (p.family || "").toLowerCase();
+                return tokens.every(function (t) {
+                    return fn.includes(t) || ln.includes(t);
+                });
+            }
+
+            async function runPhoneSearch(opts) {
+                const quiet = opts && opts.quiet;
+                const st = $("phoneSearchStatus");
+                const ul = $("phoneSearchResults");
+                const q = $("phoneSearchQuery").value;
+                const mode = getPhoneSearchMode();
+                const regs = await loadRegs();
+
+                await loadPopulationOnce();
+
+                phoneExplicitIdx = -1;
+                ul.innerHTML = "";
+                ul.classList.add("hidden");
+
+                let hits = [];
+
+                if (mode === "phone") {
+                    const d = digits(q);
+                    if (d.length < 4) {
+                        if (quiet) {
+                            st.textContent = "";
+                            st.classList.remove("err");
+                            return;
+                        }
+                        st.textContent = "הזינו לפחות 4 ספרות לחיפוש טלפון.";
+                        st.classList.add("err");
+                        return;
+                    }
+                    regs.forEach(function (r, idx) {
+                        if (digits(r.phone).includes(d)) hits.push({ source: "reg", idx: idx, r: r });
+                    });
+                    population.forEach(function (p) {
+                        if (popMatchesSavedReg(p, regs)) return;
+                        if (popPhoneDigits(p).includes(d)) hits.push({ source: "pop", p: p });
+                    });
+                } else if (mode === "id") {
+                    const d = digits(q);
+                    if (d.length < 4) {
+                        if (quiet) {
+                            st.textContent = "";
+                            st.classList.remove("err");
+                            return;
+                        }
+                        st.textContent = "הזינו לפחות 4 ספרות מת״ז.";
+                        st.classList.add("err");
+                        return;
+                    }
+                    regs.forEach(function (r, idx) {
+                        const pid = idDigitsOnly(r.idNumber);
+                        if (pid.includes(d)) hits.push({ source: "reg", idx: idx, r: r });
+                    });
+                    population.forEach(function (p) {
+                        if (popMatchesSavedReg(p, regs)) return;
+                        const pid = idDigitsOnly(p.id);
+                        if (pid.includes(d)) hits.push({ source: "pop", p: p });
+                    });
+                } else {
+                    const tokens = tokenize(q);
+                    if (!tokens.length) {
+                        if (quiet) {
+                            st.textContent = "";
+                            st.classList.remove("err");
+                            return;
+                        }
+                        st.textContent = "הקלידו שם פרטי ו/או משפחה לחיפוש.";
+                        st.classList.add("err");
+                        return;
+                    }
+                    regs.forEach(function (r, idx) {
+                        const fn = (r.firstName || "").toLowerCase();
+                        const ln = (r.familyName || "").toLowerCase();
+                        const ok = tokens.every(function (t) {
+                            return fn.includes(t) || ln.includes(t);
+                        });
+                        if (ok) hits.push({ source: "reg", idx: idx, r: r });
+                    });
+                    population.forEach(function (p) {
+                        if (popMatchesSavedReg(p, regs)) return;
+                        if (popNameMatches(p, tokens)) hits.push({ source: "pop", p: p });
+                    });
+                }
+
+                st.classList.remove("err");
+
+                if (!hits.length) {
+                    st.textContent = "לא נמצאו תוצאות. ניתן להמשיך לרישום חדש למטה.";
+                    return;
+                }
+
+                hits.slice(0, 40).forEach(function (h) {
+                    const li = document.createElement("li");
+                    li.setAttribute("role", "option");
+                    const parts = [];
+                    let title;
+
+                    if (h.source === "reg") {
+                        title = ((h.r.firstName || "") + " " + (h.r.familyName || "")).trim() || "(ללא שם)";
+                        if (h.r.phone) parts.push(h.r.phone);
+                        if (h.r.idNumber) parts.push("ת״ז " + h.r.idNumber);
+                        if (h.r.arrivalReason) parts.push(h.r.arrivalReason);
+                        parts.push("רשומה שמורה");
+                    } else {
+                        const p = h.p;
+                        title = ((p.first || "") + " " + (p.family || "")).trim() || "(ללא שם)";
+                        if (p.phone) parts.push(p.phone);
+                        if (p.id) parts.push("ת״ז " + p.id);
+                        parts.push("אוכלוסיית מזרע");
+                    }
+
+                    li.textContent = title;
+                    const meta = document.createElement("div");
+                    meta.className = "meta";
+                    meta.textContent = parts.join(" · ");
+                    li.appendChild(meta);
+
+                    li.addEventListener("click", function () {
+                        if (h.source === "reg") {
+                            phoneExplicitIdx = h.idx;
+                            $("quickPhone").value = h.r.phone || "";
+                            $("quickFirst").value = h.r.firstName || "";
+                            $("quickFamily").value = h.r.familyName || "";
+                            $("quickId").value = h.r.idNumber || "";
+                            if (h.r.arrivalReason) {
+                                $("quickArrivalReason").value = h.r.arrivalReason;
+                                syncQuickOther();
+                                $("quickArrivalOther").value = h.r.arrivalOther || "";
+                            } else {
+                                $("quickArrivalReason").value = "";
+                                $("quickArrivalOther").value = "";
+                                syncQuickOther();
+                            }
+                            $("quickStatus").textContent = "נבחרה רשומה קיימת — שמירה תעדכן אותה.";
+                        } else {
+                            const p = h.p;
+                            phoneExplicitIdx = -1;
+                            $("quickPhone").value = p.phone || "";
+                            $("quickFirst").value = p.first || "";
+                            $("quickFamily").value = p.family || "";
+                            $("quickId").value = normId(p.id);
+                            $("quickArrivalReason").value = "";
+                            $("quickArrivalOther").value = "";
+                            syncQuickOther();
+                            $("quickStatus").textContent =
+                                "נבחר אדם מרשימת האוכלוסייה — בחרו סיבת הגעה ושמרו (רישום קיים עם אותו טלפון/ת״ז יעודכן אוטומטית).";
+                        }
+                        ul.classList.add("hidden");
+                        $("quickStatus").classList.remove("err");
+                    });
+
+                    ul.appendChild(li);
+                });
+
+                ul.classList.remove("hidden");
+                if (hits.length > 40) {
+                    st.textContent = "מוצגות 40 תוצאות ראשונות מתוך " + hits.length + ".";
+                } else {
+                    st.textContent = "נמצאו " + hits.length + " תוצאות — לחצו לבחירה.";
+                }
+            }
+
+            function findMatchIndex(registrations, phone, idNum) {
+                const idN = normId(idNum);
+                const ph = digits(phone);
+                if (idN && idN.length >= 4) {
+                    for (let i = registrations.length - 1; i >= 0; i--) {
+                        if (normId(registrations[i].idNumber) === idN) return i;
+                    }
+                }
+                if (ph.length >= 7) {
+                    for (let i = registrations.length - 1; i >= 0; i--) {
+                        if (digits(registrations[i].phone) === ph) return i;
+                    }
+                }
+                return -1;
+            }
+
+            function syncQuickOther() {
+                const v = $("quickArrivalReason").value;
+                const wrap = $("quickOtherWrap");
+                const show = v === "אחר";
+                wrap.classList.toggle("hidden", !show);
+                if (!show) $("quickArrivalOther").value = "";
+            }
+
+            $("quickArrivalReason").addEventListener("change", syncQuickOther);
+            syncQuickOther();
+
+            $("phoneSearchForm").addEventListener("submit", async function (ev) {
+                ev.preventDefault();
+                try {
+                    await runPhoneSearch({ quiet: false });
+                } catch (e) {
+                    console.error(e);
+                    $("phoneSearchStatus").textContent = "שגיאה בטעינת נתונים מהשרת.";
+                    $("phoneSearchStatus").classList.add("err");
+                }
+            });
+
+            let phoneSearchDebounce = null;
+            $("phoneSearchQuery").addEventListener("input", function () {
+                if (phoneSearchDebounce) clearTimeout(phoneSearchDebounce);
+                phoneSearchDebounce = setTimeout(async function () {
+                    phoneSearchDebounce = null;
+                    const q = $("phoneSearchQuery").value.trim();
+                    const mode = getPhoneSearchMode();
+                    try {
+                        if (mode === "phone" && digits(q).length >= 4) await runPhoneSearch({ quiet: true });
+                        else if (mode === "id" && digits(q).length >= 4) await runPhoneSearch({ quiet: true });
+                        else if (mode === "name" && tokenize(q).length > 0) await runPhoneSearch({ quiet: true });
+                        else {
+                            $("phoneSearchResults").classList.add("hidden");
+                            $("phoneSearchResults").innerHTML = "";
+                            $("phoneSearchStatus").textContent = "";
+                            $("phoneSearchStatus").classList.remove("err");
+                            phoneExplicitIdx = -1;
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }, 280);
+            });
+
+            document.querySelectorAll('input[name="phoneSearchMode"]').forEach(function (radio) {
+                radio.addEventListener("change", function () {
+                    $("phoneSearchQuery").dispatchEvent(new Event("input", { bubbles: true }));
+                });
+            });
+
+            loadPopulationOnce();
+
+            $("quickPhoneForm").addEventListener("submit", async function (ev) {
+                ev.preventDefault();
+                const st = $("quickStatus");
+                const okBox = $("phoneSuccess");
+                st.classList.remove("err");
+                okBox.classList.add("hidden");
+
+                const phone = $("quickPhone").value.trim();
+                const ph = digits(phone);
+                if (ph.length < 7) {
+                    st.textContent = "נא להזין מספר טלפון תקין (לפחות 7 ספרות).";
+                    st.classList.add("err");
+                    return;
+                }
+
+                const firstName = $("quickFirst").value.trim();
+                const familyName = $("quickFamily").value.trim();
+                const idDigitsRaw = idDigitsOnly($("quickId").value);
+                if (idDigitsRaw) {
+                    if (typeof window.isValidIsraeliID !== "function" || !window.isValidIsraeliID(idDigitsRaw)) {
+                        st.textContent = "מספר תעודת הזהות אינו תקין.";
+                        st.classList.add("err");
+                        return;
+                    }
+                }
+
+                const idNumber = idDigitsRaw ? idDigitsRaw.padStart(9, "0") : "";
+                const arrivalReason = $("quickArrivalReason").value;
+                const arrivalOther = $("quickArrivalOther").value.trim();
+
+                if (!arrivalReason) {
+                    st.textContent = "נא לבחור סיבת הגעה.";
+                    st.classList.add("err");
+                    return;
+                }
+                if (arrivalReason === "אחר" && !arrivalOther) {
+                    st.textContent = 'כאשר נבחרה "אחר", נא למלא פירוט.';
+                    st.classList.add("err");
+                    return;
+                }
+
+                let registrations;
+                try {
+                    registrations = await loadRegs();
+                } catch (e) {
+                    console.error(e);
+                    st.textContent = "שגיאה בטעינת נתונים מהשרת.";
+                    st.classList.add("err");
+                    return;
+                }
+
+                let idx = phoneExplicitIdx;
+                if (idx < 0 || idx >= registrations.length) {
+                    idx = findMatchIndex(registrations, phone, idNumber);
+                }
+
+                const now = new Date().toISOString();
+                let rec;
+
+                if (idx >= 0 && idx < registrations.length) {
+                    const prev = ensureShape(registrations[idx]);
+                    var arrJson =
+                        typeof msrStringifyArrivalReasonsArr === "function"
+                            ? msrStringifyArrivalReasonsArr([arrivalReason])
+                            : JSON.stringify([arrivalReason]);
+                    rec = {
+                        ...prev,
+                        phone: phone,
+                        firstName: firstName,
+                        familyName: familyName,
+                        idNumber: idNumber,
+                        arrivalReason: arrivalReason,
+                        arrivalReasons: arrJson,
+                        arrivalOther: arrivalReason === "אחר" ? arrivalOther : "",
+                        updatedAt: now,
+                    };
+                    phoneExplicitIdx = -1;
+                } else {
+                    var firstSt =
+                        window.MSR_STATIONS && MSR_STATIONS.length
+                            ? MSR_STATIONS[0]
+                            : "עמדת רישום ושחרור";
+                    var arrJsonNew =
+                        typeof msrStringifyArrivalReasonsArr === "function"
+                            ? msrStringifyArrivalReasonsArr([arrivalReason])
+                            : JSON.stringify([arrivalReason]);
+                    rec = {
+                        recordId: genRecordId(),
+                        savedAt: now,
+                        firstName: firstName,
+                        familyName: familyName,
+                        phone: phone,
+                        idNumber: idNumber,
+                        indication: false,
+                        arrivalReason: arrivalReason,
+                        arrivalReasons: arrJsonNew,
+                        arrivalOther: arrivalReason === "אחר" ? arrivalOther : "",
+                        released: false,
+                        releaseNotes: "",
+                        currentStation: firstSt,
+                        nextStation: "",
+                        nextStations: "[]",
+                        recordStatus: "פתוח",
+                        stationNotes: "{}",
+                        stationNotesLev: "",
+                        stationNotesMedical: "",
+                        stationPhases: "{}",
+                        visitedStations: "[]",
+                    };
+                }
+
+                try {
+                    await saveReg(rec);
+                } catch (e) {
+                    console.error(e);
+                    st.textContent = "שגיאה בשמירה לשרת.";
+                    st.classList.add("err");
+                    return;
+                }
+
+                st.textContent = "";
+                okBox.classList.remove("hidden");
+                setTimeout(function () {
+                    okBox.classList.add("hidden");
+                }, 1800);
+
+                phoneExplicitIdx = -1;
+                $("phoneSearchResults").classList.add("hidden");
+                $("phoneSearchResults").innerHTML = "";
+                $("phoneSearchStatus").textContent = "";
+                $("quickPhone").value = "";
+                $("quickFirst").value = "";
+                $("quickFamily").value = "";
+                $("quickId").value = "";
+                $("quickArrivalReason").value = "";
+                $("quickArrivalOther").value = "";
+                syncQuickOther();
+                $("quickPhone").focus();
+            });
+        })();
+    </script>
+
+    <script>window.HAMALAuth && window.HAMALAuth.injectLogoutButton();</script>
+</body>
+</html>

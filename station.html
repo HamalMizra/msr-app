@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <script src="./auth.js"></script>
+    <script>window.HAMALAuth && window.HAMALAuth.requireLogin();</script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>תחנה — מרכז סיוע ראשוני</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=20260405k" />
+  </head>
+  <body>
+    <div class="page stations-page station-detail-page">
+      <nav class="site-nav" aria-label="ניווט ראשי">
+        <a href="./stations.html">כל התחנות</a>
+      </nav>
+
+      <p class="station-page-back">
+        <a href="./stations.html" class="secondary">חזרה לכל התחנות</a>
+      </p>
+
+      <header class="header">
+        <img src="./logo-mizra.png" width="140" height="56" alt="" />
+        <div class="header-text">
+          <h1 id="stationPageTitle">תחנה</h1>
+        </div>
+      </header>
+
+      <p id="stationBadParam" class="status err hidden" role="alert"></p>
+
+      <section class="card" id="stationMainContent">
+        <h2>חיפוש ברשומות התחנה</h2>
+        <div class="row">
+          <div class="field full">
+            <label for="stationQ">סינון (שם, טלפון, ת״ז)</label>
+            <input type="search" id="stationQ" autocomplete="off" />
+          </div>
+        </div>
+        <p id="stationFilterHint" class="muted" style="margin: 0"></p>
+        <p id="stationLoadStatus" class="status" aria-live="polite"></p>
+      </section>
+
+      <p id="stationWorkflowHint" class="station-workflow-callout">
+        <strong>זרימת עבודה:</strong> לחצו על <strong>שורת המטופל</strong> ברשימות «ממתין לתחנה» / «בטיפול בתחנה» — ייפתח חלון ל־<strong>תחילת טיפול</strong> או <strong>סיום טיפול</strong>. בעמדת רישום ושחרור, ב«בטיפול» ניתן גם <strong>שחרור מהמרכז</strong> עם הערת שחרור.
+      </p>
+
+      <section class="card station-board-section" aria-labelledby="wait-title">
+        <h2 id="wait-title">ממתין לתחנה</h2>
+        <p class="muted" style="margin-top: 0">מי שהתחנה הבאה היא התחנה הזו, ועדיין לא התחיל בה טיפול.</p>
+        <div id="stationWaitList" class="station-single-list"></div>
+      </section>
+
+      <section class="card station-board-section" aria-labelledby="active-title">
+        <h2 id="active-title">בטיפול בתחנה</h2>
+        <p class="muted" style="margin-top: 0">מי שמסומן כעת בתחנה הנוכחית — התחיל בהם טיפול.</p>
+        <div id="stationActiveList" class="station-single-list"></div>
+      </section>
+
+      <div id="waitModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="waitModalHeading">
+        <div id="waitModalDialog" class="modal-dialog card">
+          <h2 id="waitModalHeading">ממתין — תחילת טיפול</h2>
+          <p class="muted" id="waitModalSummary"></p>
+          <input type="hidden" id="waitModalRecordId" />
+          <input type="hidden" id="waitModalStationName" />
+
+          <div class="field full">
+            <label for="waitModalNotes">הערות <span id="waitModalStationLabel"></span></label>
+            <textarea id="waitModalNotes" rows="4"></textarea>
+          </div>
+
+          <p class="muted" style="margin: 0 0 0.5rem; font-size: 0.85rem">
+            «תחילת טיפול» מעביר את המטופל מ«ממתין» ל«בטיפול» באותה תחנה.
+          </p>
+
+          <div class="btns" style="margin-top: 0.75rem; flex-wrap: wrap; gap: 0.5rem">
+            <button type="button" class="primary" id="btnWaitModalStart">תחילת טיפול</button>
+            <button type="button" class="secondary" id="btnWaitModalSaveNotes">שמירת הערות בלבד</button>
+            <button type="button" class="secondary" id="btnWaitModalCancel">סגירה</button>
+          </div>
+          <p id="waitModalStatus" class="status" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <div id="activeModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="activeModalHeading">
+        <div id="activeModalDialog" class="modal-dialog card">
+          <h2 id="activeModalHeading">בטיפול — סיום טיפול</h2>
+          <p class="muted" id="activeModalSummary"></p>
+          <input type="hidden" id="activeModalRecordId" />
+          <input type="hidden" id="activeModalStationName" />
+
+          <div class="field full">
+            <label for="activeModalNotes">הערות <span id="activeModalStationLabel"></span></label>
+            <textarea id="activeModalNotes" rows="4"></textarea>
+          </div>
+
+          <div id="activeModalPlannedWrap" class="active-modal-planned-wrap hidden" aria-live="polite">
+            <p class="active-modal-planned-title">תחנות שהוקצו מראש למסלול</p>
+            <ul id="activeModalPlannedList" class="active-modal-planned-list"></ul>
+          </div>
+
+          <div class="field full">
+            <label for="activeModalNext">תחנה הבאה (חובה לסיום טיפול)</label>
+            <select id="activeModalNext" aria-required="true"></select>
+          </div>
+          <p class="muted" style="margin: 0 0 0.75rem; font-size: 0.85rem">
+            בלחיצה על «סיום טיפול» יש לבחור את התחנה הבאה — המעבר למצב המתנה לתחנה שנבחרה. תחנות שהוקצו מראש מסומנות בכוכבית ובתיבת הבחירה.
+          </p>
+
+          <div class="active-modal-actions">
+            <button type="button" class="primary" id="btnActiveModalComplete">סיום טיפול</button>
+            <button type="button" class="secondary" id="btnActiveModalSaveNotes">שמירת הערות בלבד</button>
+            <button type="button" class="secondary" id="btnActiveModalCancel">סגירה</button>
+          </div>
+
+          <div id="activeModalReleaseBlock" class="active-modal-release-block hidden">
+            <p class="active-modal-release-title">שחרור מהמרכז</p>
+            <p class="muted active-modal-release-lead">
+              סגירת המעקב ב«שחרור» במקום המשך לתחנה אחרת. נדרשת הערת שחרור.
+            </p>
+            <div class="field full">
+              <label for="activeModalReleaseNotes">הערת שחרור</label>
+              <textarea id="activeModalReleaseNotes" rows="3" placeholder="למשל: כיוון לבית, מספר מעקב, הערות נוספות…"></textarea>
+            </div>
+            <button type="button" class="primary active-modal-release-submit" id="btnActiveModalRelease">שמירת שחרור</button>
+          </div>
+          <p id="activeModalStatus" class="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+
+    <script src="./stations-config.js?v=20260405p"></script>
+    <script src="./station-app.js?v=20260405p"></script>
+  
+    <script>window.HAMALAuth && window.HAMALAuth.injectLogoutButton();</script>
+</body>
+</html>

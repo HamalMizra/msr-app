@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <script src="./auth.js"></script>
+    <script>window.HAMALAuth && window.HAMALAuth.requireLogin();</script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>מרכז סיוע ראשוני — רישום</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <nav class="site-nav" aria-label="ניווט ראשי">
+        <a href="./index.html">טופס מלא</a>
+        <span class="sep">|</span>
+        <a href="./phone.html">רישום קצר</a>
+        <span class="sep">|</span>
+        <a href="./dashboard.html">דשבורד ושאילתות</a>
+        <span class="sep">|</span>
+        <a href="./stations.html">כל התחנות</a>
+        <span class="sep">|</span>
+        <a href="./stations-lev.html">צוות לב ורווחה</a>
+        <span class="sep">|</span>
+        <a href="./stations-medical.html">תחנה רפואה</a>
+      </nav>
+      <header class="header">
+        <img src="./logo-mizra.png" width="140" height="56" alt="סמליל קיבוץ מזרע" />
+        <div class="header-text">
+          <h1>טופס רישום — מרכז סיוע ראשוני</h1>
+          <p>קיבוץ מזרע — מילוי פרטים אישיים</p>
+        </div>
+      </header>
+
+      <section class="card" aria-labelledby="search-title">
+        <h2 id="search-title">חיפוש מהיר לפי אוכלוסיית מזרע</h2>
+        <p class="muted">
+          לפי שם: הקלידו פרטי או משפחה (או שניהם) — תוצג השלמה אוטומטית. לפי טלפון או תעודת זהות השתמשו באפשרויות למטה ולחצו חיפוש.
+        </p>
+        <div class="search-mode" role="radiogroup" aria-label="סוג חיפוש">
+          <label class="opt"><input type="radio" name="searchMode" value="name" checked /> לפי שם</label>
+          <label class="opt"><input type="radio" name="searchMode" value="phone" /> טלפון</label>
+          <label class="opt"><input type="radio" name="searchMode" value="id" /> תעודת זהות</label>
+        </div>
+        <div id="searchFieldsName" class="row">
+          <div class="field full autocomplete-wrap">
+            <label for="qName">שם פרטי ושם משפחה</label>
+            <input
+              type="text"
+              id="qName"
+              autocomplete="off"
+              spellcheck="false"
+              aria-autocomplete="list"
+              aria-controls="nameSuggestionsList"
+              aria-expanded="false"
+            />
+            <ul
+              id="nameSuggestionsList"
+              class="name-suggestions hidden"
+              role="listbox"
+              aria-label="השלמות לפי שם"
+            ></ul>
+          </div>
+        </div>
+        <div id="searchFieldsPhone" class="row hidden">
+          <div class="field full">
+            <label for="qPhone">טלפון</label>
+            <input id="qPhone" type="tel" inputmode="tel" autocomplete="tel" />
+          </div>
+        </div>
+        <div id="searchFieldsId" class="row hidden">
+          <div class="field full">
+            <label for="qId">מספר תעודת זהות</label>
+            <input id="qId" type="text" inputmode="numeric" />
+          </div>
+        </div>
+        <div class="btns">
+          <button type="button" class="primary" id="btnSearch">חיפוש</button>
+          <button type="button" class="secondary" id="btnClearSearch">ניקוי תוצאות</button>
+        </div>
+        <p id="searchStatus" class="status" aria-live="polite"></p>
+        <ul id="searchResults" class="results hidden" role="listbox" aria-label="תוצאות חיפוש"></ul>
+      </section>
+
+      <form class="card" id="regForm" novalidate>
+        <div id="editModeBanner" class="banner-edit hidden" role="status">
+          <strong>עריכת רשומה קיימת</strong> — השינויים ישמרו על אותה רישום (לפי ת״ז או טלפון). לרישום חדש לחצו
+          «ביטול עריכה».
+          <div class="btns" style="margin-top: 0.5rem; margin-bottom: 0">
+            <button type="button" class="secondary" id="btnCancelEdit">ביטול עריכה</button>
+          </div>
+        </div>
+        <h2>פרטי הנרשם</h2>
+        <div class="row">
+          <div class="field">
+            <label for="firstName">שם פרטי <span aria-hidden="true">*</span></label>
+            <input id="firstName" name="firstName" type="text" required autocomplete="given-name" />
+          </div>
+          <div class="field">
+            <label for="familyName">שם משפחה <span aria-hidden="true">*</span></label>
+            <input id="familyName" name="familyName" type="text" required autocomplete="family-name" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="phone">טלפון <span aria-hidden="true">*</span></label>
+            <input id="phone" name="phone" type="tel" required inputmode="tel" autocomplete="tel" />
+          </div>
+          <div class="field">
+            <label for="idNumber">מספר תעודת זהות</label>
+            <input id="idNumber" name="idNumber" type="text" inputmode="numeric" />
+            <p id="idNumberHint" class="status" style="margin-top: 0.35rem; min-height: 1.2em" aria-live="polite"></p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field full">
+            <div class="checkbox-row">
+              <input type="checkbox" id="indication" name="indication" />
+              <label for="indication" style="margin: 0">בעצ&quot;מ</label>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field full">
+            <span class="field-label-block">סיבות הגעה <span aria-hidden="true">*</span> — ניתן לבחור מספר</span>
+            <div class="reason-checkboxes-grid" role="group" aria-label="סיבות הגעה">
+              <label class="opt"><input type="checkbox" name="arrivalReasonCb" value="רפואי" /> רפואי</label>
+              <label class="opt"><input type="checkbox" name="arrivalReasonCb" value="חרדה" /> חרדה</label>
+              <label class="opt"><input type="checkbox" name="arrivalReasonCb" value="מגורים" /> מגורים</label>
+              <label class="opt"
+                ><input type="checkbox" name="arrivalReasonCb" value="איתור בני משפחה" /> איתור בני משפחה</label
+              >
+              <label class="opt"><input type="checkbox" name="arrivalReasonCb" value="אחר" id="arrivalCbOther" /> אחר</label>
+            </div>
+          </div>
+        </div>
+        <div class="row" id="otherDetailWrap">
+          <div class="field full">
+            <label for="arrivalOther">פירוט (אם נבחר &quot;אחר&quot;)</label>
+            <textarea id="arrivalOther" name="arrivalOther" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field full">
+            <div class="checkbox-row">
+              <input type="checkbox" id="released" name="released" />
+              <label for="released" style="margin: 0">שוחרר מהמרכז (שחרור)</label>
+            </div>
+          </div>
+        </div>
+        <div class="row" id="releaseNotesWrap">
+          <div class="field full">
+            <label for="releaseNotes">מלל / הערות בעת שחרור</label>
+            <textarea id="releaseNotes" name="releaseNotes" rows="3" placeholder="למשל: כיוון לבית, מספר מעקב, הערות נוספות…"></textarea>
+          </div>
+        </div>
+
+        <h2 class="stations-section-title">תחנות ומעקב</h2>
+        <p class="muted" style="margin-top: -0.5rem">ציון התחנה הנוכחית והבאה.</p>
+        <div class="row">
+          <div class="field">
+            <label for="currentStation">תחנה נוכחית</label>
+            <select id="currentStation" name="currentStation"></select>
+          </div>
+          <div class="field full">
+            <label for="nextStationsSelect" id="nextStationLabel">תחנות המשך (ממתינים)</label>
+            <select id="nextStationsSelect" name="nextStationsSelect" multiple size="8" class="select-multi-stations"></select>
+            <p class="muted" style="margin: 0.35rem 0 0; font-size: 0.82rem">
+              לחצו Ctrl (או Cmd) לבחירת מספר תחנות. המטופל יופיע בממתינים בכל תחנה שנבחרה.
+            </p>
+          </div>
+        </div>
+        <div class="field full lev-notes-field">
+          <label for="stationNotesLevInput">הערות צוות לב ורווחה</label>
+          <textarea id="stationNotesLevInput" name="stationNotesLevInput" rows="2"></textarea>
+        </div>
+        <div class="field full medical-notes-field">
+          <label for="stationNotesMedicalInput">הערות תחנה רפואה</label>
+          <textarea id="stationNotesMedicalInput" name="stationNotesMedicalInput" rows="2"></textarea>
+        </div>
+
+        <div class="btns">
+          <button type="submit" class="primary" id="btnSubmit">שמירת רשומה (לרשימה המקומית)</button>
+          <button type="button" class="secondary" id="btnResetForm">איפוס טופס</button>
+        </div>
+        <p id="formStatus" class="status" aria-live="polite"></p>
+      </form>
+
+      <section class="card" aria-labelledby="excel-title">
+        <h2 id="excel-title">שמירה ואחזור — קובץ Excel</h2>
+        <p class="muted">
+          כל הרשומות שנשמרו באמצעות הכפתור לעיל נאספות ברשימה. ניתן לייצא לאקסל או לטעון קובץ אקסל קיים
+          (למשל מהמחשב או מספריית SharePoint) כדי להוסיף אותן לרשימה.
+        </p>
+        <div class="btns">
+          <button type="button" class="primary" id="btnExport">הורדת Excel — כל הרשומות</button>
+        </div>
+        <div class="file-input-wrap" style="margin-top: 1rem">
+          <label for="importFile" style="font-weight: 600; margin-bottom: 0.35rem">טעינת רשומות מקובץ Excel</label>
+          <input type="file" id="importFile" accept=".xlsx,.xls" />
+        </div>
+        <p id="excelStatus" class="status" aria-live="polite"></p>
+      </section>
+
+      <section class="card" aria-labelledby="list-title">
+        <h2 id="list-title">רשומות שמורות (סשן נוכחי)</h2>
+        <div id="recordsEmpty" class="empty-box">אין עדיין רשומות. שמרו טופס או ייבאו אקסל.</div>
+        <div id="recordsTableWrap" class="table-wrap hidden">
+          <table>
+            <thead>
+              <tr>
+                <th>תאריך</th>
+                <th>שם</th>
+                <th>משפחה</th>
+                <th>טלפון</th>
+                <th>ת&quot;ז</th>
+                <th>בעצ&quot;מ</th>
+                <th>סיבת הגעה</th>
+                <th>שוחרר</th>
+                <th>סטטוס</th>
+                <th>תחנה נוכחית</th>
+                <th>תחנות המשך</th>
+                <th>הערת שחרור</th>
+                <th>פעולות</th>
+              </tr>
+            </thead>
+            <tbody id="recordsBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script src="./id-validation.js"></script>
+    <script src="./stations-config.js"></script>
+    <script src="./xlsx.full.min.js"></script>
+    <script src="./app.js?v=20260405j"></script>
+  
+    <script>window.HAMALAuth && window.HAMALAuth.injectLogoutButton();</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <script src="./auth.js"></script>
+    <script>window.HAMALAuth && window.HAMALAuth.requireLogin();</script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>כל התחנות — מרכז סיוע ראשוני</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=20260405g" />
+  </head>
+  <body>
+    <div class="page stations-page stations-hub-page">
+      <header class="header">
+        <img src="./logo-mizra.png" width="140" height="56" alt="" />
+        <div class="header-text">
+          <h1>כל התחנות</h1>
+          <p>ממתינים — בתור לתחנה; מטופלים — בטיפול כעת בתחנה. לחיצה פותחת את דף העבודה.</p>
+        </div>
+      </header>
+
+      <section class="card">
+        <h2>תחנות המסלול</h2>
+        <p id="stationsHubLoadHint" class="status" aria-live="polite"></p>
+        <div id="stationsHubGrid" class="stations-hub-grid"></div>
+      </section>
+    </div>
+
+    <script src="./stations-config.js?v=20260405p"></script>
+    <script src="./stations-hub.js?v=20260405p"></script>
+  
+    <script>window.HAMALAuth && window.HAMALAuth.injectLogoutButton();</script>
+</body>
+</html>

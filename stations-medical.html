@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <script src="./auth.js"></script>
+    <script>window.HAMALAuth && window.HAMALAuth.requireLogin();</script>
+    <meta charset="utf-8" />
+    <title>מעבר לתחנה רפואה…</title>
+    <meta
+      http-equiv="refresh"
+      content="0; url=station.html?s=%D7%AA%D7%97%D7%A0%D7%94%20%D7%A8%D7%A4%D7%95%D7%90%D7%94"
+    />
+    <script>
+      (function () {
+        var med = "תחנה רפואה";
+        window.location.replace("./station.html?s=" + encodeURIComponent(med));
+      })();
+    </script>
+  </head>
+  <body>
+    <p>
+      <a href="./station.html?s=%D7%AA%D7%97%D7%A0%D7%94%20%D7%A8%D7%A4%D7%95%D7%90%D7%94"
+        >מעבר לדף תחנה רפואה…</a
+      >
+    </p>
+  
+    <script>window.HAMALAuth && window.HAMALAuth.injectLogoutButton();</script>
+</body>
+</html>

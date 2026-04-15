@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <script src="./auth.js"></script>
+    <script>window.HAMALAuth && window.HAMALAuth.requireLogin();</script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>דשבורד — מרכז סיוע ראשוני</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap"
+          rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css?v=20260405h" />
+</head>
+<body>
+    <div class="dash-page">
+        <nav class="site-nav" aria-label="ניווט ראשי">
+            <a href="./index.html">טופס מלא</a>
+            <span class="sep">|</span>
+            <a href="./phone.html">רישום קצר</a>
+            <span class="sep">|</span>
+            <a href="./dashboard.html" aria-current="page">דשבורד ושאילתות</a>
+            <span class="sep">|</span>
+            <a href="./stations.html">כל התחנות</a>
+            <span class="sep">|</span>
+            <a href="./stations-lev.html">צוות לב ורווחה</a>
+            <span class="sep">|</span>
+            <a href="./stations-medical.html">תחנה רפואה</a>
+        </nav>
+
+        <header class="header">
+            <img src="./logo-mizra.png" width="120" height="48" alt="" />
+            <div class="header-text">
+                <h1>דשבורד רישומים</h1>
+                <p>סיכומים ושאילתות על הנתונים מהשרת המרכזי</p>
+            </div>
+        </header>
+
+        <section class="card">
+            <h2>סיכום</h2>
+            <div id="dashStats" class="dash-grid"></div>
+
+            <div class="dash-legend-visual" aria-label="מקרא צבעים בדשבורד">
+                <h3 class="dash-legend-heading">מקרא ויזואלי</h3>
+                <div class="dash-legend-columns">
+                    <div class="dash-legend-block">
+                        <div class="dash-legend-block-title">כרטיסי סיכום</div>
+                        <ul class="dash-legend-items">
+                            <li><span class="dash-swatch swatch-total" aria-hidden="true"></span>סה״כ — כחול מזרע</li>
+                            <li><span class="dash-swatch swatch-released" aria-hidden="true"></span>שוחררו — ירוק</li>
+                            <li><span class="dash-swatch swatch-pending" aria-hidden="true"></span>לא שוחרר — כתום</li>
+                        </ul>
+                    </div>
+
+                    <div class="dash-legend-block">
+                        <div class="dash-legend-block-title">רקע שורה לפי סיבת הגעה</div>
+                        <ul class="dash-legend-items">
+                            <li><span class="dash-swatch swatch-medical" aria-hidden="true"></span>רפואי</li>
+                            <li><span class="dash-swatch swatch-anxiety" aria-hidden="true"></span>חרדה</li>
+                            <li><span class="dash-swatch swatch-housing" aria-hidden="true"></span>מגורים</li>
+                            <li><span class="dash-swatch swatch-family" aria-hidden="true"></span>איתור משפחה</li>
+                            <li><span class="dash-swatch swatch-other" aria-hidden="true"></span>אחר</li>
+                            <li><span class="dash-swatch swatch-phone" aria-hidden="true"></span>רישום קצר</li>
+                            <li><span class="dash-swatch swatch-unknown" aria-hidden="true"></span>אחר / ללא סיבה</li>
+                        </ul>
+                    </div>
+
+                    <div class="dash-legend-block">
+                        <div class="dash-legend-block-title">פס ימני בטבלה (שחרור)</div>
+                        <ul class="dash-legend-items">
+                            <li><span class="dash-swatch swatch-bar swatch-bar-yes" aria-hidden="true"></span>שוחרר</li>
+                            <li><span class="dash-swatch swatch-bar swatch-bar-no" aria-hidden="true"></span>לא שוחרר</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <p id="dashHint" class="muted" style="margin: 0"></p>
+        </section>
+
+        <section class="card">
+            <h2>שאילתה — סינון וחיפוש</h2>
+            <div class="dash-filters">
+                <div class="field full">
+                    <label for="qText">טקסט חופשי (שם, טלפון, ת״ז, סיבה, הערות)</label>
+                    <input type="text" id="qText" />
+                </div>
+
+                <div class="field">
+                    <label for="qReason">סיבת הגעה</label>
+                    <select id="qReason">
+                        <option value="">— הכל —</option>
+                        <option value="רפואי">רפואי</option>
+                        <option value="חרדה">חרדה</option>
+                        <option value="מגורים">מגורים</option>
+                        <option value="איתור בני משפחה">איתור בני משפחה</option>
+                        <option value="אחר">אחר</option>
+                        <option value="רישום טלפון קצר">רישום טלפון קצר</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="qReleased">שוחרר</label>
+                    <select id="qReleased">
+                        <option value="">— הכל —</option>
+                        <option value="yes">כן</option>
+                        <option value="no">לא</option>
+                    </select>
+                </div>
+
+                <div class="field" style="flex: 0 0 auto; align-self: flex-end">
+                    <button type="button" class="primary" id="btnApplyFilter">הצגה</button>
+                </div>
+            </div>
+
+            <p id="filterStatus" class="status" aria-live="polite"></p>
+        </section>
+
+        <section class="card">
+            <h2>תוצאות (<span id="resultCount">0</span>)</h2>
+            <p class="muted" style="margin: 0 0 0.5rem; font-size: 0.82rem">
+                <strong>מקרא:</strong> צבע רקע התאים — לפי סיבת הגעה. פס ימני ירוק — שוחרר; כתום — עדיין לא סומן שחרור.
+            </p>
+
+            <div class="dash-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>תאריך</th>
+                            <th>שם</th>
+                            <th>משפחה</th>
+                            <th>טלפון</th>
+                            <th>ת״ז</th>
+                            <th>סיבת הגעה</th>
+                            <th>שוחרר</th>
+                            <th>סטטוס</th>
+                            <th>תחנה נוכחית</th>
+                            <th>תחנות המשך</th>
+                            <th>הערת שחרור</th>
+                            <th>הערות תחנות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <div id="dashNotesModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="dashNotesModalTitle">
+        <div class="modal-dialog card dash-notes-modal-dialog">
+            <h2 id="dashNotesModalTitle">הערות לפי תחנה</h2>
+            <p class="muted" id="dashNotesModalMeta" style="margin: 0 0 0.75rem; font-size: 0.88rem"></p>
+            <div id="dashNotesModalBody" class="dash-notes-modal-body"></div>
+            <div class="btns" style="margin-top: 1rem">
+                <button type="button" class="secondary" id="dashNotesModalClose">סגירה</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./stations-config.js"></script>
+    <script>
+        (function () {
+            "use strict";
+
+            const API_BASE = "/api";
+            const fetchWithAuth = (window.HAMALAuth && window.HAMALAuth.fetchWithAuth) || fetch;
+
+            function $(id) {
+                return document.getElementById(id);
+            }
+
+            function formatDateDisplay(iso) {
+                if (!iso) return "";
+                const d = new Date(iso);
+                if (Number.isNaN(d.getTime())) return iso;
+                return d.toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" });
+            }
+
+            function escapeHtml(s) {
+                const d = document.createElement("div");
+                d.textContent = s == null ? "" : String(s);
+                return d.innerHTML;
+            }
+
+            async function loadRegs() {
+                const res = await fetchWithAuth(`${API_BASE}/items`);
+                if (!res.ok) {
+                    const txt = await res.text();
+                    throw new Error(`Failed to load dashboard data: ${res.status} ${txt}`);
+                }
+                const data = await res.json();
+                return Array.isArray(data) ? data : [];
+            }
+
+            function indicationYes(r) {
+                if (r.indication === true || r.indication === "כן") return true;
+                if (r.indication == null || r.indication === "" || r.indication === false) return false;
+                if (typeof r.indication === "string" && r.indication.trim() !== "") return true;
+                return false;
+            }
+
+            function isReleasedRec(r) {
+                return r.released === true || r.released === "כן";
+            }
+
+            function reasonsListForRecord(r) {
+                if (typeof msrParseArrivalReasonsStr === "function") {
+                    return msrParseArrivalReasonsStr(r.arrivalReasons, r.arrivalReason);
+                }
+                const one = (r.arrivalReason || "").trim();
+                return one ? [one] : [];
+            }
+
+            function arrivalDisplayLine(r) {
+                if (typeof msrFormatArrivalReasonsDisplay === "function") {
+                    return msrFormatArrivalReasonsDisplay(r);
+                }
+                return (r.arrivalReason || "").trim();
+            }
+
+            function primaryReasonForRowClass(r) {
+                const list = reasonsListForRecord(r);
+                return list.length ? list[0] : "";
+            }
+
+            function nextStationsDisplay(r) {
+                if (typeof msrGetNextStationsListFromRecord === "function") {
+                    const a = msrGetNextStationsListFromRecord(r);
+                    if (a.length) return a.join(", ");
+                }
+                return (r.nextStation || "").trim();
+            }
+
+            function reasonStatClass(reason) {
+                const m = {
+                    רפואי: "reason-medical",
+                    חרדה: "reason-anxiety",
+                    מגורים: "reason-housing",
+                    "איתור בני משפחה": "reason-family",
+                    אחר: "reason-other",
+                    "רישום טלפון קצר": "reason-phone",
+                };
+                const k = String(reason || "").trim();
+                return m[k] || "reason-unknown";
+            }
+
+            function reasonRowClass(reason) {
+                const m = {
+                    רפואי: "r-medical",
+                    חרדה: "r-anxiety",
+                    מגורים: "r-housing",
+                    "איתור בני משפחה": "r-family",
+                    אחר: "r-other",
+                    "רישום טלפון קצר": "r-phone",
+                };
+                const k = String(reason || "").trim();
+                return m[k] || "r-unknown";
+            }
+
+            function renderStats(all) {
+                const el = $("dashStats");
+                el.innerHTML = "";
+
+                const total = all.length;
+                const released = all.filter(isReleasedRec).length;
+                const reasons = {};
+
+                all.forEach(function (r) {
+                    const list = reasonsListForRecord(r);
+                    if (!list.length) {
+                        reasons["(ללא)"] = (reasons["(ללא)"] || 0) + 1;
+                    } else {
+                        list.forEach(function (reason) {
+                            const k = String(reason || "(ללא)").trim() || "(ללא)";
+                            reasons[k] = (reasons[k] || 0) + 1;
+                        });
+                    }
+                });
+
+                const topReasons = Object.keys(reasons)
+                    .sort(function (a, b) {
+                        return reasons[b] - reasons[a];
+                    })
+                    .slice(0, 4);
+
+                function card(num, lbl, className) {
+                    const d = document.createElement("div");
+                    d.className = "dash-card " + (className || "");
+                    d.innerHTML = '<div class="num"></div><div class="lbl"></div>';
+                    d.querySelector(".num").textContent = String(num);
+                    d.querySelector(".lbl").textContent = lbl;
+                    return d;
+                }
+
+                el.appendChild(card(total, "סה״כ רישומים", "stat-total"));
+                el.appendChild(card(released, "סה״כ שוחררו", "stat-released"));
+                el.appendChild(card(total - released, "עדיין לא סומן שחרור", "stat-pending"));
+
+                topReasons.forEach(function (rk) {
+                    const slug = reasonStatClass(rk === "(ללא)" ? "" : rk);
+                    el.appendChild(card(reasons[rk], "סיבה: " + rk, "stat-reason " + slug));
+                });
+            }
+
+            function rowMatchesFilters(r, textLow, reasonVal, releasedVal) {
+                if (reasonVal && reasonsListForRecord(r).indexOf(reasonVal) < 0) return false;
+                const rel = isReleasedRec(r);
+                if (releasedVal === "yes" && !rel) return false;
+                if (releasedVal === "no" && rel) return false;
+                if (!textLow) return true;
+
+                const blob = [
+                    r.firstName,
+                    r.familyName,
+                    r.phone,
+                    r.idNumber,
+                    r.arrivalReason,
+                    r.arrivalReasons,
+                    r.arrivalOther,
+                    r.releaseNotes,
+                    r.recordStatus,
+                    r.currentStation,
+                    r.nextStation,
+                    r.nextStations,
+                    r.stationNotes,
+                    r.stationNotesLev,
+                    r.stationNotesMedical,
+                    arrivalDisplayLine(r),
+                    nextStationsDisplay(r),
+                    indicationYes(r) ? "בעצמ" : "",
+                ]
+                    .join(" ")
+                    .toLowerCase();
+
+                return blob.indexOf(textLow) !== -1;
+            }
+
+            let lastFiltered = [];
+
+            function buildDashNotesText(r) {
+                const parts = [];
+                if (typeof msrFormatStationNotesForDisplayNoLev === "function") {
+                    const t = (msrFormatStationNotesForDisplayNoLev(r.stationNotes) || "").trim();
+                    if (t) parts.push("תחנות (למעט צוות לב):\n" + t);
+                }
+                const lev = (r.stationNotesLev || "").trim();
+                if (lev) parts.push("צוות לב ורווחה:\n" + lev);
+                const med = (r.stationNotesMedical || "").trim();
+                if (med) parts.push("תחנה רפואה:\n" + med);
+                if (!parts.length) return "אין הערות תחנה בשדות.";
+                return parts.join("\n\n");
+            }
+
+            function openDashNotesModal(r) {
+                const meta =
+                    ((((r.firstName || "") + " " + (r.familyName || "")).trim() || "—") +
+                        " · טלפון: " +
+                        (r.phone || "—"));
+                $("dashNotesModalMeta").textContent = meta;
+                $("dashNotesModalBody").textContent = buildDashNotesText(r);
+                $("dashNotesModal").classList.remove("hidden");
+            }
+
+            function closeDashNotesModal() {
+                $("dashNotesModal").classList.add("hidden");
+            }
+
+            async function applyFilters() {
+                const all = await loadRegs();
+                const textLow = $("qText").value.trim().toLowerCase();
+                const reasonVal = $("qReason").value;
+                const releasedVal = $("qReleased").value;
+
+                const filtered = all.filter(function (r) {
+                    return rowMatchesFilters(r, textLow, reasonVal, releasedVal);
+                });
+
+                lastFiltered = filtered;
+
+                $("resultCount").textContent = String(filtered.length);
+                $("filterStatus").textContent =
+                    filtered.length === all.length
+                        ? "מוצגות כל הרשומות (" + all.length + ")."
+                        : "מוצגות " + filtered.length + " מתוך " + all.length + " רשומות.";
+                $("filterStatus").classList.remove("err");
+
+                const body = $("dashBody");
+                body.innerHTML = "";
+
+                filtered.forEach(function (r, rowIdx) {
+                    const tr = document.createElement("tr");
+                    tr.className =
+                        reasonRowClass(primaryReasonForRowClass(r)) +
+                        " " +
+                        (isReleasedRec(r) ? "rel-yes" : "rel-no");
+
+                    const dt = r.updatedAt
+                        ? formatDateDisplay(r.savedAt) + " · " + formatDateDisplay(r.updatedAt)
+                        : formatDateDisplay(r.savedAt);
+
+                    tr.innerHTML =
+                        "<td>" +
+                        escapeHtml(dt) +
+                        "</td><td>" +
+                        escapeHtml(r.firstName) +
+                        "</td><td>" +
+                        escapeHtml(r.familyName) +
+                        "</td><td>" +
+                        escapeHtml(r.phone) +
+                        "</td><td>" +
+                        escapeHtml(r.idNumber) +
+                        "</td><td>" +
+                        escapeHtml(arrivalDisplayLine(r)) +
+                        "</td><td>" +
+                        escapeHtml(isReleasedRec(r) ? "כן" : "לא") +
+                        "</td><td>" +
+                        escapeHtml(String(r.recordStatus || "").slice(0, 24)) +
+                        "</td><td>" +
+                        escapeHtml(
+                            isReleasedRec(r) ? "—" : String(r.currentStation || "").slice(0, 20)
+                        ) +
+                        "</td><td>" +
+                        escapeHtml(String(nextStationsDisplay(r) || "").slice(0, 36)) +
+                        "</td><td>" +
+                        escapeHtml((r.releaseNotes || "").slice(0, 80)) +
+                        "</td><td>" +
+                        '<button type="button" class="secondary btn-mini dash-open-notes" data-dash-row="' +
+                        rowIdx +
+                        '">הצגת הערות</button></td>';
+
+                    body.appendChild(tr);
+                });
+
+                renderStats(all);
+            }
+
+            async function init() {
+                try {
+                    const all = await loadRegs();
+                    $("dashHint").textContent =
+                        all.length === 0
+                            ? "אין רישומים — השתמשו בטופס המלא או ברישום הטלפוני, ואז חזרו לדף זה."
+                            : "הנתונים נקראים מהשרת המרכזי.";
+
+                    renderStats(all);
+                    await applyFilters();
+
+                    $("btnApplyFilter").addEventListener("click", applyFilters);
+                    $("qText").addEventListener("keydown", function (ev) {
+                        if (ev.key === "Enter") {
+                            ev.preventDefault();
+                            applyFilters();
+                        }
+                    });
+
+                    $("dashBody").addEventListener("click", function (ev) {
+                        const btn = ev.target.closest(".dash-open-notes");
+                        if (!btn) return;
+                        const idx = parseInt(btn.getAttribute("data-dash-row"), 10);
+                        if (Number.isNaN(idx) || !lastFiltered[idx]) return;
+                        openDashNotesModal(lastFiltered[idx]);
+                    });
+
+                    $("dashNotesModalClose").addEventListener("click", closeDashNotesModal);
+                    $("dashNotesModal").addEventListener("click", function (ev) {
+                        if (ev.target === $("dashNotesModal")) closeDashNotesModal();
+                    });
+
+                    document.addEventListener("keydown", function (ev) {
+                        if (ev.key !== "Escape") return;
+                        if ($("dashNotesModal") && !$("dashNotesModal").classList.contains("hidden")) {
+                            closeDashNotesModal();
+                        }
+                    });
+
+                    setInterval(async function () {
+                        try {
+                            await applyFilters();
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    }, 5000);
+                } catch (err) {
+                    console.error(err);
+                    $("dashHint").textContent = "שגיאה בטעינת הנתונים מהשרת.";
+                    $("dashHint").classList.add("err");
+                }
+            }
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+
+    <script>window.HAMALAuth && window.HAMALAuth.injectLogoutButton();</script>
+</body>
+</html>

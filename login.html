@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>כניסה לחמ״ל</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    body {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      background:#f6f8fa;
+      margin:0;
+      font-family:"Rubik","Segoe UI",system-ui,sans-serif;
+    }
+    .login-box {
+      background:#fff;
+      padding:28px;
+      border-radius:12px;
+      box-shadow:0 1px 8px rgba(22,48,65,.12);
+      width:min(92vw,360px);
+      text-align:center;
+      border:1px solid #d0d7de;
+    }
+    .login-box h1 {
+      margin:0 0 10px;
+      color:#163041;
+      font-size:1.4rem;
+    }
+    .login-box p {
+      margin:0 0 16px;
+      color:#57606a;
+    }
+    .login-box input {
+      width:100%;
+      padding:12px;
+      border:1px solid #d0d7de;
+      border-radius:8px;
+      font-size:1rem;
+      box-sizing:border-box;
+    }
+    .login-box button {
+      margin-top:14px;
+      width:100%;
+      padding:12px;
+      border:0;
+      border-radius:8px;
+      background:#163041;
+      color:#fff;
+      font-size:1rem;
+      cursor:pointer;
+    }
+    .login-box button:hover {
+      background:#1f4258;
+    }
+    .error {
+      color:#b42318;
+      min-height:1.2em;
+      margin-top:12px;
+    }
+  </style>
+
+  <script src="./auth.js"></script>
+</head>
+
+<body>
+  <div class="login-box">
+    <h1>כניסה לחמ״ל</h1>
+    <p>יש להזין את סיסמת הגישה למערכת.</p>
+
+    <input type="password" id="password" placeholder="הכנס סיסמה" autofocus />
+    <button id="loginBtn" type="button">כניסה</button>
+
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    // 🔒 ניקוי ערך שגוי (אם נשמר URL בעבר)
+    (function () {
+      try {
+        const v = localStorage.getItem("HAMAL_KEY");
+        if (v && (v.startsWith("http") || v.includes("/api/items"))) {
+          console.warn("Invalid stored HAMAL_KEY removed");
+          localStorage.removeItem("HAMAL_KEY");
+        }
+      } catch (e) {}
+    })();
+
+    // אם כבר מחובר → מעבר לאפליקציה
+    if (localStorage.getItem("HAMAL_KEY")) {
+      window.location.replace("./index.html");
+    }
+
+    function doLogin() {
+      const pass = document.getElementById("password").value.trim();
+      const errorEl = document.getElementById("error");
+
+      // בדיקה ריקה
+      if (!pass) {
+        errorEl.innerText = "יש להזין סיסמה";
+        return;
+      }
+
+      // 🔒 מניעת הכנסת URL
+      if (/^https?:\/\//i.test(pass) || pass.includes("/api/items")) {
+        errorEl.innerText = "הוזן ערך לא תקין כסיסמה";
+        return;
+      }
+
+      try {
+        localStorage.setItem("HAMAL_KEY", pass);
+      } catch (e) {
+        errorEl.innerText = "שגיאה בשמירת הסיסמה";
+        return;
+      }
+
+      window.location.replace("./index.html");
+    }
+
+    document.getElementById("loginBtn").addEventListener("click", doLogin);
+
+    document.getElementById("password").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") doLogin();
+    });
+  </script>
+</body>
+</html>
