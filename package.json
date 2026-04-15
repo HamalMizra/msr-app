@@ -1,13 +1,8 @@
 {
-  "name": "msr-backend",
+  "name": "msr-netlify-supabase",
   "version": "1.0.0",
-  "description": "Azure Functions backend",
-  "main": "src/functions/items.js",
-  "scripts": {
-    "start": "func start"
-  },
+  "private": true,
   "dependencies": {
-    "@azure/functions": "^4.0.0",
-    "@azure/data-tables": "^13.2.2"
+    "@supabase/supabase-js": "^2.103.1"
   }
 }
